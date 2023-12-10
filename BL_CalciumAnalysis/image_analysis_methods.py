@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 
 class ImageAnalysis:
     def __init__(self, project_folder):
