@@ -1,5 +1,8 @@
 import os
 import pandas as pd
+from PIL import Image
+import numpy as np
+import cv2
 
 class ImageAnalysis:
     def __init__(self, project_folder):
@@ -21,6 +24,46 @@ class ImageAnalysis:
             for file in files:
                 all_files.append(os.path.join(root, file))
         return all_files
+    
+    
+    def generate_dark_image(self, tiff_path, num_frames=200):
+        """
+        Generates a median 'dark' image from the first specified number of frames in a multi-frame TIFF file.
 
+        This method is used for compensating the dark pixel offset in bioluminescence imaging data.
+
+        Parameters:
+        tiff_path (str): Path to the multi-frame TIFF file.
+        num_frames (int, optional): Number of frames to consider for generating the dark image. Defaults to 200.
+
+        Returns:
+        numpy.ndarray: A median image representing the 'dark' image.
+        """
+        with Image.open(tiff_path) as img:
+            frames = [np.array(img.getdata(), dtype=np.float32).reshape(img.size[::-1]) for i in range(num_frames)]
+            median_frame = np.median(frames, axis=0)
+            return median_frame
+
+    def subtract_dark_image(self, raw_tiff_path, dark_image):
+        """
+        Subtracts a 'dark' image from each frame of a multi-frame TIFF file.
+
+        This method is used to compensate for the average dark pixel offset in bioluminescence imaging data.
+
+        Parameters:
+        raw_tiff_path (str): Path to the raw multi-frame TIFF file.
+        dark_image (numpy.ndarray): The 'dark' image to be subtracted from each frame of the raw image.
+
+        Returns:
+        list of numpy.ndarray: A list of images, each representing a frame from the raw image with the dark image subtracted.
+        """
+        with Image.open(raw_tiff_path) as img:
+            compensated_images = []
+            for i in range(img.n_frames):
+                img.seek(i)
+                frame = np.array(img.getdata(), dtype=np.float32).reshape(img.size[::-1])
+                compensated_image = cv2.subtract(frame, dark_image)
+                compensated_images.append(compensated_image)
+            return compensated_images
 
     # Additional methods can be added here
