@@ -67,3 +67,30 @@ class ImageAnalysis:
             return compensated_images
 
     # Additional methods can be added here
+
+
+def print_cells_per_recording(sensor_data_map):
+    """Print the number of cells analysed per recording for each sensor type."""
+    for sensor_name, all_data in sensor_data_map.items():
+        print(f"Sensor: {sensor_name}")
+
+        if not all_data:
+            print("  No recordings found.\n")
+            continue
+
+        total_cells = 0
+        for session_id, session_data in sorted(all_data.items()):
+            roi_data = session_data.get('roi_data')
+
+            if isinstance(roi_data, dict):
+                cell_count = len(roi_data)
+            elif hasattr(roi_data, 'columns'):
+                # Accept DataFrame-like objects that store ROI columns
+                cell_count = sum(col.startswith('ROI') for col in roi_data.columns)
+            else:
+                cell_count = 0
+
+            total_cells += cell_count
+            print(f"  Recording {session_id}: {cell_count} cells")
+
+        print(f"  Total cells: {total_cells}\n")
